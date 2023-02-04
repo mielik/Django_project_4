@@ -211,7 +211,7 @@ class PostPagesTests(TestCase):
                 "posts:follow_index",
             )
         )
-    
+
     def page_not_found(self):
         """URL-адрес использует соответствующий шаблон."""
         response = self.guest_client.get(reverse("core:page_not_found"))
