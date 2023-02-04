@@ -16,7 +16,7 @@ def get_page_obj(request, posts):
 
 # @cache_page (20)
 def index(request):
-    posts = Post.objects.all()
+    posts = Post.objects.select_related('group').all()
     template = "posts/index.html"
     page_obj = get_page_obj(request, posts)
     context = {"page_obj": page_obj}
@@ -37,7 +37,7 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     page_obj = get_page_obj(request, posts)
-    following = author.following.exists()
+    following = Follow.objects.filter(author=author)
     context = {
         "author": author,
         "page_obj": page_obj,
@@ -127,5 +127,5 @@ def profile_follow(request, username):
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    Follow.objects.get(user=request.user, author=author).delete()
+    get_object_or_404(Follow, user=request.user, author=author).delete()
     return redirect("posts:follow_index")

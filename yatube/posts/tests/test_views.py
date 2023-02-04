@@ -165,6 +165,10 @@ class PostPagesTests(TestCase):
         # Удаляем пост, кешированием содержание дожно остаться одинаковым
         response_2 = self.guest_client.get(reverse("posts:index"))
         self.assertEqual(response.content, response_2.content)
+        """Проверка сброса кеша"""
+        cache.clear()
+        response_2_clear = self.guest_client.get(reverse("posts:index"))
+        self.assertNotEqual(response.content, response_2_clear.content)
 
     def test_follow_and_unfollow(self):
         """Авторизованный пользователь может подписываться
@@ -183,6 +187,31 @@ class PostPagesTests(TestCase):
         response = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response.context["page_obj"]), 0)
 
+    def test_follow_redirect(self):
+        """Проверка перенаправления страницы follow"""
+        response = self.authorized_client.get(
+            reverse("posts:profile_follow",
+                    kwargs={"username": self.user.username})
+        )
+        self.assertRedirects(
+            response, reverse(
+                "posts:follow_index",
+            )
+        )
+
+    def test_unfollow_redirect(self):
+        """Проверка перенаправления страницы unfollow"""
+        Follow.objects.create(user=self.user, author=self.post.author)
+        response = self.authorized_client.get(
+            reverse("posts:profile_unfollow",
+                    kwargs={"username": self.user.username})
+        )
+        self.assertRedirects(
+            response, reverse(
+                "posts:follow_index",
+            )
+        )
+    
     def page_not_found(self):
         """URL-адрес использует соответствующий шаблон."""
         response = self.guest_client.get(reverse("core:page_not_found"))
