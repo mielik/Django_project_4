@@ -37,7 +37,7 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     page_obj = get_page_obj(request, posts)
-    following = Follow.objects.filter(author=author)
+    following = Follow.objects.filter(author=author).exists()
     context = {
         "author": author,
         "page_obj": page_obj,

@@ -171,24 +171,26 @@ class PostPagesTests(TestCase):
         self.assertNotEqual(response.content, response_2_clear.content)
 
     def test_follow_and_unfollow(self):
-        """Авторизованный пользователь может подписываться
-        на других пользователей."""
-        Follow.objects.create(user=self.user, author=self.post.author)
-        response = self.authorized_client.get(reverse("posts:follow_index"))
-        self.assertEqual(len(response.context["page_obj"]), 1)
-        """Авторизованный пользователь может удалять
-        пользователей из подписок"""
-        Follow.objects.get(user=self.user, author=self.post.author).delete()
+        """Проверка, что подписок нет."""
         response = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response.context["page_obj"]), 0)
+        """Проверка, подписка создалась между двумя пользователями."""
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        response_1 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response_1.context["page_obj"]), 1)
+        self.assertIn(self.post, response_1.context["page_obj"])
         """Новая запись не появляется в ленте тех, кто не подписан."""
-        self.user_new = User.objects.create_user(username="testusernew")
-        Follow.objects.create(user=self.user_new, author=self.post.author)
-        response = self.authorized_client.get(reverse("posts:follow_index"))
-        self.assertEqual(len(response.context["page_obj"]), 0)
+        self.user_new = User.objects.create(username="testusernew")
+        self.authorized_client.force_login(self.user_new)
+        response_2 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response_2.context["page_obj"]), 0)
+        """Проверка, что подписка перестала существовать."""
+        Follow.objects.all().delete()
+        response_3 = self.authorized_client.get(reverse("posts:follow_index"))
+        self.assertEqual(len(response_3.context["page_obj"]), 0)
 
     def test_follow_redirect(self):
-        """Проверка перенаправления страницы follow"""
+        """Проверка перенаправления страницы follow."""
         response = self.authorized_client.get(
             reverse("posts:profile_follow",
                     kwargs={"username": self.user.username})
