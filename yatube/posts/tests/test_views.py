@@ -1,14 +1,14 @@
 import shutil
 import tempfile
 
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.conf import settings
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.models import Group, Post, Follow
-from django.core.cache import cache
+from posts.models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -22,9 +22,7 @@ class PostPagesTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.group = Group.objects.create(
-            title="testgroup",
-            slug="testgroup",
-            description="Test description"
+            title="testgroup", slug="testgroup", description="Test description"
         )
         self.post = Post.objects.create(
             text="Test text",
@@ -52,9 +50,8 @@ class PostPagesTests(TestCase):
             reverse(
                 "posts:post_detail", kwargs={"post_id": 1}
             ): "posts/post_detail.html",
-            reverse(
-                "posts:post_edit",
-                kwargs={"post_id": 1}): "posts/create_post.html",
+            reverse("posts:post_edit",
+                    kwargs={"post_id": 1}): "posts/create_post.html",
             reverse("posts:post_create"): "posts/create_post.html",
         }
         # Проверяем, что при обращении к name
@@ -188,17 +185,52 @@ class PostPagesTests(TestCase):
         Follow.objects.all().delete()
         response_3 = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response_3.context["page_obj"]), 0)
-    # Замечания исправлены,
-    # добавлена в тесты test_follow_and_unfollow проверка,
-    # что подписка создается между двумя конкретными пользователями
-    # и перестает существовать.
-    # Если это неправильно, прошу написать, что именно не так
-    # или навести на проблему. Спасибо.
 
-    def page_not_found(self):
-        """URL-адрес использует соответствующий шаблон."""
-        response = self.guest_client.get(reverse("core:page_not_found"))
-        self.assertTemplateUsed(response, "core/404.html")
+    def test_follow_redirect(self):
+        """Проверка перенаправления страницы follow."""
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        response = self.authorized_client.get(
+            reverse(
+                "posts:profile_follow", kwargs={"username": self.user.username}
+            )
+        )
+        self.assertRedirects(
+            response,
+            reverse(
+                "posts:follow_index",
+            ),
+        )
+        self.assertTrue(
+            Follow.objects.filter(author=self.post.author)
+            .filter(user=self.user)
+            .exists()
+        )
+
+    def test_unfollow_redirect(self):
+        """Проверка перенаправления страницы unfollow"""
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        response = self.authorized_client.get(
+            reverse("posts:profile_unfollow",
+                    kwargs={"username": self.user.username})
+        )
+        self.assertRedirects(
+            response,
+            reverse(
+                "posts:follow_index",
+            ),
+        )
+        self.assertFalse(
+            Follow.objects.filter(author=self.post.author)
+            .filter(user=self.user)
+            .exists()
+        )
+
+
+class ViewTestClass(TestCase):
+    def test_error_page(self):
+        response = self.client.get('/nonexist-page/')
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, 'core/404.html')
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -251,9 +283,7 @@ class PostFormTests(TestCase):
             b"\x0A\x00\x3B"
         )
         self.uploaded = SimpleUploadedFile(
-            name="small.gif",
-            content=self.small_gif,
-            content_type="image/gif"
+            name="small.gif", content=self.small_gif, content_type="image/gif"
         )
 
     def test_image_in_index(self):

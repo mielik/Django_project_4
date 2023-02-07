@@ -16,7 +16,7 @@ def get_page_obj(request, posts):
 
 # @cache_page (20)
 def index(request):
-    posts = Post.objects.select_related('group').all()
+    posts = Post.objects.select_related("group").all()
     template = "posts/index.html"
     page_obj = get_page_obj(request, posts)
     context = {"page_obj": page_obj}
@@ -37,11 +37,11 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     posts = author.posts.all()
     page_obj = get_page_obj(request, posts)
-    following = Follow.objects.filter(author=author).exists()
-    # С учетом предыдущих замечаний
-    # для проверки наличия записи в БД использовано exists,
-    # добавлена фильтрация по текущему пользователю.
-    # Не понимаю, что не исправлено.
+    following = (
+        Follow.objects.filter(author=author)
+        .filter(user=request.user.id)
+        .exists()
+    )
     context = {
         "author": author,
         "page_obj": page_obj,
@@ -108,8 +108,8 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    follower = Follow.objects.filter(user=request.user).values_list(
-        "author_id"
+    follower = (
+        Follow.objects.filter(user=request.user).values_list("author_id")
     )
     posts = Post.objects.filter(author_id__in=follower)
     page_obj = get_page_obj(request, posts)
