@@ -39,7 +39,7 @@ def profile(request, username):
     page_obj = get_page_obj(request, posts)
     following = Follow.objects.filter(author=author).exists()
     # С учетом предыдущих замечаний
-    # для проверки наличия записи в БД использовано exists, 
+    # для проверки наличия записи в БД использовано exists,
     # добавлена фильтрация по текущему пользователю.
     # Не понимаю, что не исправлено.
     context = {

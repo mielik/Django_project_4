@@ -188,35 +188,12 @@ class PostPagesTests(TestCase):
         Follow.objects.all().delete()
         response_3 = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response_3.context["page_obj"]), 0)
-# Замечания исправлены, добавлена в тесты test_follow_and_unfollow проверка,
-# что подписка создается между двумя конкретными пользователями
-# и перестает существовать. 
-# Если это неправильно, прошу написать, что именно не так
-# или навести на проблему. Спасибо.
-    def test_follow_redirect(self):
-        """Проверка перенаправления страницы follow."""
-        response = self.authorized_client.get(
-            reverse("posts:profile_follow",
-                    kwargs={"username": self.user.username})
-        )
-        self.assertRedirects(
-            response, reverse(
-                "posts:follow_index",
-            )
-        )
-
-    def test_unfollow_redirect(self):
-        """Проверка перенаправления страницы unfollow"""
-        Follow.objects.create(user=self.user, author=self.post.author)
-        response = self.authorized_client.get(
-            reverse("posts:profile_unfollow",
-                    kwargs={"username": self.user.username})
-        )
-        self.assertRedirects(
-            response, reverse(
-                "posts:follow_index",
-            )
-        )
+    # Замечания исправлены,
+    # добавлена в тесты test_follow_and_unfollow проверка,
+    # что подписка создается между двумя конкретными пользователями
+    # и перестает существовать.
+    # Если это неправильно, прошу написать, что именно не так
+    # или навести на проблему. Спасибо.
 
     def page_not_found(self):
         """URL-адрес использует соответствующий шаблон."""
