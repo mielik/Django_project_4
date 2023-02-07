@@ -30,6 +30,7 @@ class PostPagesTests(TestCase):
             author=self.user,
             group=self.group
         )
+        self.author = User.objects.create(username="author")
 
     def tearDown(self):
         super().tearDown()
@@ -172,7 +173,7 @@ class PostPagesTests(TestCase):
         response = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response.context["page_obj"]), 0)
         """Проверка, подписка создалась между двумя пользователями."""
-        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        Follow.objects.create(user=self.user, author=self.post.author)
         response_1 = self.authorized_client.get(reverse("posts:follow_index"))
         self.assertEqual(len(response_1.context["page_obj"]), 1)
         self.assertIn(self.post, response_1.context["page_obj"])
@@ -188,10 +189,10 @@ class PostPagesTests(TestCase):
 
     def test_follow_redirect(self):
         """Проверка перенаправления страницы follow."""
-        Follow.objects.get_or_create(user=self.user, author=self.post.author)
         response = self.authorized_client.get(
             reverse(
-                "posts:profile_follow", kwargs={"username": self.user.username}
+                "posts:profile_follow",
+                kwargs={"username": self.author.username}
             )
         )
         self.assertRedirects(
@@ -201,7 +202,7 @@ class PostPagesTests(TestCase):
             ),
         )
         self.assertTrue(
-            Follow.objects.filter(author=self.post.author)
+            Follow.objects.filter(author=self.author)
             .filter(user=self.user)
             .exists()
         )
