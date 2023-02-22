@@ -1,3 +1,5 @@
-# hw05_final
-
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+# Django project - blog
+- With the help of sorl-thumbnail, illustrations for posts are displayed.
+- A comment system has been created.
+- Caching of the main page.
+- Testing cache.
